@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>QRSA App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <style>
+    body {
+      font-family: Arial;
+      padding: 15px;
+      background: #f5f5f5;
+    }
+    h1 { text-align: center; }
+    .card {
+      background: white;
+      padding: 15px;
+      margin-bottom: 15px;
+      border-radius: 10px;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+    }
+    input, select {
+      width: 100%;
+      padding: 8px;
+      margin-top: 8px;
+    }
+  </style>
+</head>
+
+<body>
+
+<h1>📊 QRSA Dashboard</h1>
+
+<div class="card">
+  <h3>💰 Portfolio</h3>
+  <p>Total: <span id="total">0</span></p>
+  <input id="monthly" type="number" placeholder="Monthly input">
+  <button onclick="addMonthly()">Add Monthly</button>
+</div>
+
+<div class="card">
+  <h3>🔄 ETF 價格</h3>
+  <button onclick="fetchPrices()">更新價格</button>
+  <p id="status"></p>
+</div>
+
+<div class="card">
+  <h3>💵 買入計算</h3>
+  <select id="etf"></select>
+  <input id="amount" placeholder="amount">
+  <button onclick="calcBuy()">計算</button>
+  <p id="buyResult"></p>
+</div>
+
+<div class="card">
+  <h3>🔁 Switch ETF</h3>
+  <input id="currentValue" placeholder="current value">
+  <select id="switchTo"></select>
+  <button onclick="calcSwitch()">計算</button>
+  <p id="switchResult"></p>
+</div>
+
+<script>
+const ETFs = ["CSUS.L","VWCG.L","IGLN.L","IBTA.L","EIMI.L"];
+let prices = {};
+let total = localStorage.getItem("total") || 0;
+
+document.getElementById("total").innerText = total;
+
+const etfSelect = document.getElementById("etf");
+const switchSelect = document.getElementById("switchTo");
+
+ETFs.forEach(e => {
+  etfSelect.add(new Option(e, e));
+  switchSelect.add(new Option(e, e));
+});
+
+function addMonthly() {
+  let val = parseFloat(document.getElementById("monthly").value);
+  if (!val) return;
+  total = parseFloat(total) + val;
+  localStorage.setItem("total", total);
+  document.getElementById("total").innerText = total;
+}
+
+async function fetchPrices() {
+  const url = "https://query1.finance.yahoo.com/v7/finance/quote?symbols=" + ETFs.join(",");
+  const res = await fetch(url);
+  const data = await res.json();
+
+  data.quoteResponse.result.forEach(e => {
+    prices[e.symbol] = e.regularMarketPrice;
+  });
+
+  document.getElementById("status").innerText = "✅ 已更新";
+}
+
+function calcBuy() {
+  const etf = document.getElementById("etf").value;
+  const amount = parseFloat(document.getElementById("amount").value);
+  const price = prices[etf];
+
+  if (!price || !amount) return;
+
+  const qty = Math.floor(amount / price);
+  const remain = amount - qty * price;
+
+  document.getElementById("buyResult").innerHTML =
+    `買 ${qty} 股<br>剩餘 ${remain.toFixed(2)}`;
+}
+
+function calcSwitch() {
+  const val = parseFloat(document.getElementById("currentValue").value);
+  const etf = document.getElementById("switchTo").value;
+  const price = prices[etf];
+
+  if (!val || !price) return;
+
+  const qty = Math.floor(val / price);
+  const remain = val - qty * price;
+
+  document.getElementById("switchResult").innerHTML =
+    `買 ${qty} 股<br>剩餘 ${remain.toFixed(2)}`;
+}
+</script>
+
+</body>
+</html>
