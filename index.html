@@ -1,155 +1,154 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>QRSA Dashboard</title>
+  <title>QRSA Pro Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   <style>
     body { font-family: Arial; padding: 15px; background: #f5f5f5; }
-    h1 { text-align: center; }
-    .card {
-      background: white;
-      padding: 15px;
-      margin-bottom: 15px;
-      border-radius: 10px;
-    }
-    button {
-      width: 100%;
-      padding: 10px;
-      margin-top: 10px;
-    }
-    input, select {
-      width: 100%;
-      padding: 8px;
-      margin-top: 8px;
-    }
+    h1 { text-align:center; }
+    .card { background:white; padding:15px; margin-bottom:15px; border-radius:10px; }
+    input, select, button { width:100%; padding:10px; margin-top:8px; }
   </style>
 </head>
 
 <body>
 
-<h1>📊 QRSA Dashboard</h1>
+<h1>📊 QRSA Pro</h1>
 
 <div class="card">
-  <h3>💰 Portfolio</h3>
-  <p>Total: <span id="total">0</span></p>
-  <input id="monthly" type="number" placeholder="Monthly input">
-  <button onclick="addMonthly()">Add Monthly</button>
+<h3>💰 Portfolio</h3>
+<select id="portfolio">
+  <option value="HARRYSO">HARRYSO</option>
+  <option value="GOMAMAME">GOMAMAME</option>
+</select>
+
+<p>Total: <span id="total">0</span></p>
+
+<input id="monthly" placeholder="Monthly input">
+<button onclick="addMonthly()">Add Monthly</button>
 </div>
 
 <div class="card">
-  <h3>🔄 ETF 價格</h3>
-  <button onclick="fetchPrices()">更新價格</button>
-  <p id="status"></p>
+<h3>🔄 價格</h3>
+<button onclick="fetchPrices()">更新 ETF 價格</button>
+<p id="status"></p>
 </div>
 
 <div class="card">
-  <h3>📊 Category（核心）</h3>
+<h3>📊 Category</h3>
 
-  <div>CN：
-    <select id="c1">
-      <option value="ICHA.L">ICHA</option>
-    </select>
-    <input id="v1" placeholder="value">
-  </div>
+<div>CN <input id="v1"></div>
+<div>US/EU/GLD <input id="v2"></div>
+<div>US/EM/GLD <input id="v3"></div>
+<div>US/UST <input id="v4"></div>
 
-  <div>US/EU/GLD：
-    <select id="c2">
-      <option value="CSUS.L">CSUS</option>
-      <option value="VWCG.L">VWCG</option>
-      <option value="IGLN.L">IGLN</option>
-    </select>
-    <input id="v2" placeholder="value">
-  </div>
-
-  <div>US/EM/GLD：
-    <select id="c3">
-      <option value="CSUS.L">CSUS</option>
-      <option value="EIMI.L">EIMI</option>
-      <option value="IGLN.L">IGLN</option>
-    </select>
-    <input id="v3" placeholder="value">
-  </div>
-
-  <div>US/UST：
-    <select id="c4">
-      <option value="CSUS.L">CSUS</option>
-      <option value="IBTA.L">IBTA</option>
-    </select>
-    <input id="v4" placeholder="value">
-  </div>
-
-  <button onclick="saveData()">保存</button>
+<button onclick="save()">保存</button>
 </div>
 
 <div class="card">
-  <h3>⚖️ Rebalance（最重要🔥）</h3>
-  <button onclick="rebalance()">計算 Rebalance</button>
-  <p id="rebalanceResult"></p>
+<h3>⚖️ Rebalance</h3>
+<button onclick="rebalance()">計算</button>
+<p id="reb"></p>
+</div>
+
+<div class="card">
+<h3>🔁 Switch ETF</h3>
+
+<select id="etf">
+<option value="CSUS.L">CSUS</option>
+<option value="VWCG.L">VWCG</option>
+<option value="IGLN.L">IGLN</option>
+<option value="IBTA.L">IBTA</option>
+<option value="EIMI.L">EIMI</option>
+</select>
+
+<input id="switchVal" placeholder="value">
+<button onclick="calcSwitch()">計算股數</button>
+
+<p id="switchRes"></p>
 </div>
 
 <script>
 const ETFs = ["CSUS.L","VWCG.L","IGLN.L","IBTA.L","EIMI.L","ICHA.L"];
 let prices = {};
-let total = localStorage.getItem("total") || 0;
 
-document.getElementById("total").innerText = total;
+let data = JSON.parse(localStorage.getItem("data")) || {
+  HARRYSO: { total: 750000, v1:0,v2:0,v3:0,v4:0 },
+  GOMAMAME: { total: 0, v1:0,v2:0,v3:0,v4:0 }
+};
 
-// Load saved category values
-["v1","v2","v3","v4"].forEach(id => {
-  document.getElementById(id).value = localStorage.getItem(id) || "";
-});
-
-function addMonthly() {
-  let val = parseFloat(document.getElementById("monthly").value);
-  if (!val) return;
-  total = parseFloat(total) + val;
-  localStorage.setItem("total", total);
-  document.getElementById("total").innerText = total;
+function current() {
+  return data[document.getElementById("portfolio").value];
 }
 
-function saveData() {
-  ["v1","v2","v3","v4"].forEach(id => {
-    localStorage.setItem(id, document.getElementById(id).value);
+function render() {
+  let p = current();
+  document.getElementById("total").innerText = p.total;
+  ["v1","v2","v3","v4"].forEach(id=>{
+    document.getElementById(id).value = p[id];
   });
+}
+
+render();
+
+function save() {
+  let p = current();
+  ["v1","v2","v3","v4"].forEach(id=>{
+    p[id] = parseFloat(document.getElementById(id).value)||0;
+  });
+  localStorage.setItem("data", JSON.stringify(data));
   alert("已保存");
 }
 
-async function fetchPrices() {
-  const url = "https://query1.finance.yahoo.com/v7/finance/quote?symbols=" + ETFs.join(",");
-  const res = await fetch(url);
-  const data = await res.json();
-
-  data.quoteResponse.result.forEach(e => {
-    prices[e.symbol] = e.regularMarketPrice;
-  });
-
-  document.getElementById("status").innerText = "✅ 已更新";
+function addMonthly() {
+  let val = parseFloat(document.getElementById("monthly").value);
+  if(!val) return;
+  current().total += val;
+  localStorage.setItem("data", JSON.stringify(data));
+  render();
 }
 
-function rebalance() {
-  let v1 = parseFloat(document.getElementById("v1").value) || 0;
-  let v2 = parseFloat(document.getElementById("v2").value) || 0;
-  let v3 = parseFloat(document.getElementById("v3").value) || 0;
-  let v4 = parseFloat(document.getElementById("v4").value) || 0;
-
-  let total = v1 + v2 + v3 + v4;
-  if (total === 0) return;
-
-  let target = total * 0.25;
-
-  let r1 = (v1 - target).toFixed(2);
-  let r2 = (v2 - target).toFixed(2);
-  let r3 = (v3 - target).toFixed(2);
-  let r4 = (v4 - target).toFixed(2);
-
-  document.getElementById("rebalanceResult").innerHTML =
-    `CN: ${r1}<br>
-     US/EU/GLD: ${r2}<br>
-     US/EM/GLD: ${r3}<br>
-     US/UST: ${r4}<br>
-     (正數=賣出 / 負數=買入)`;
+async function fetchPrices(){
+  let url="https://query1.finance.yahoo.com/v7/finance/quote?symbols="+ETFs.join(",");
+  let res=await fetch(url);
+  let d=await res.json();
+  d.quoteResponse.result.forEach(e=>prices[e.symbol]=e.regularMarketPrice);
+  document.getElementById("status").innerText="✅ updated";
 }
+
+function rebalance(){
+  let p=current();
+  let total=p.v1+p.v2+p.v3+p.v4;
+  if(!total) return;
+
+  let target=total*0.25;
+
+  let out=
+  `CN: ${(p.v1-target).toFixed(2)}<br>
+   US/EU/GLD: ${(p.v2-target).toFixed(2)}<br>
+   US/EM/GLD: ${(p.v3-target).toFixed(2)}<br>
+   US/UST: ${(p.v4-target).toFixed(2)}<br>
+   (正=賣 / 負=買)`;
+
+  document.getElementById("reb").innerHTML=out;
+}
+
+function calcSwitch(){
+  let val=parseFloat(document.getElementById("switchVal").value);
+  let etf=document.getElementById("etf").value;
+  let price=prices[etf];
+
+  if(!val||!price) return;
+
+  let qty=Math.floor(val/price);
+  let remain=val-qty*price;
+
+  document.getElementById("switchRes").innerHTML=
+    `買 ${qty} 股<br>剩餘 ${remain.toFixed(2)}`;
+}
+
+document.getElementById("portfolio").addEventListener("change",render);
 </script>
 
 </body>
